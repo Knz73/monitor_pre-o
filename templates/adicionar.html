@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adicionar Produto - Monitor de Preços</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'nb-blue': '#1e40af',
+                        'nb-green': '#10b981'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    </style>
+</head>
+<body class="bg-white min-h-screen">
+    <header class="border-b border-gray-200">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-gray-800">Monitor<span class="text-nb-green">Preços</span></a>
+            <nav class="flex gap-6 text-sm">
+                <a href="/" class="text-gray-600 hover:text-nb-green">Início</a>
+                <a href="/adicionar" class="text-gray-600 hover:text-nb-green">Adicionar</a>
+                <a href="/verificar" class="text-gray-600 hover:text-nb-green">Verificar</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 max-w-2xl">
+        <h2 class="text-lg font-semibold mb-6 text-gray-700">Adicionar novo produto</h2>
+
+        {% if mensagem %}
+        <div class="bg-green-50 text-green-700 p-3 rounded-md mb-4 text-sm">{{ mensagem }}</div>
+        {% endif %}
+
+        <form method="POST" class="space-y-4">
+            {{ form.hidden_tag() }}
+
+            <div>
+                <label class="block text-sm font-medium mb-1 text-gray-700">Nome do produto</label>
+                {{ form.nome(class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-nb-green") }}
+                {% if form.nome.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.nome.errors[0] }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1 text-gray-700">URL do produto</label>
+                {{ form.url(class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-nb-green", placeholder="https://...") }}
+                {% if form.url.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.url.errors[0] }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1 text-gray-700">Preço alvo (R$)</label>
+                {{ form.preco_desejado(class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-nb-green") }}
+                {% if form.preco_desejado.errors %}
+                <p class="text-red-600 text-xs mt-1">{{ form.preco_desejado.errors[0] }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="flex items-center gap-2 text-sm">
+                    {{ form.original(class="rounded text-nb-green focus:ring-nb-green") }}
+                    <span>Produto original</span>
+                </label>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1 text-gray-700">Imagem (opcional)</label>
+                {{ form.imagem(class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-nb-green") }}
+            </div>
+
+            <button type="submit" class="w-full bg-nb-green text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600">
+                Salvar produto
+            </button>
+        </form>
+    </main>
+</body>
+</html>

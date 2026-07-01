@@ -1,3 +1,4 @@
+import logging
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus, urlparse
@@ -5,6 +6,9 @@ from urllib.parse import quote_plus, urlparse
 from .mercado_livre import preco_mercado_livre
 from .amazon import preco_amazon
 from .shopee import preco_shopee
+from .playwright_scraper import pegar_preco_playwright
+
+logger = logging.getLogger(__name__)
 
 def pegar_html(url):
     headers = {
@@ -18,8 +22,8 @@ def pegar_html(url):
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             return response.text
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Erro ao buscar %s: %s", url, e)
 
     return None
 
@@ -28,11 +32,6 @@ def extrair_preco_texto(texto):
         return None
     preco = texto.replace("R$", "").replace("US$", "").replace("\n", " ").strip()
     return preco if preco else None
-
-
-def buscar_url_mercado_livre(query):
-    resultados = buscar_resultados_mercado_livre(query, max_results=1)
-    return resultados[0]["url"] if resultados else None
 
 
 def buscar_resultados_mercado_livre(query, max_results=5):
@@ -53,9 +52,11 @@ def buscar_resultados_mercado_livre(query, max_results=5):
         title = item.get_text(strip=True)
         price_tag = item.select_one("span.price-tag-fraction") or item.select_one("span.price-tag-text-sr-only")
         price = extrair_preco_texto(price_tag.text if price_tag else None)
+        img_tag = item.select_one("img")
+        imagem = img_tag.get("data-src") or img_tag.get("src") if img_tag else None
 
         if title and href not in [r["url"] for r in resultados]:
-            resultados.append({"title": title, "url": href, "price": price})
+            resultados.append({"title": title, "url": href, "price": price, "imagem": imagem})
             if len(resultados) >= max_results:
                 break
 
@@ -84,9 +85,11 @@ def buscar_resultados_amazon(query, max_results=5):
         title = link.get_text(strip=True)
         price_tag = item.select_one("span.a-price > span.a-offscreen")
         price = extrair_preco_texto(price_tag.text if price_tag else None)
+        img_tag = item.select_one("img.s-image")
+        imagem = img_tag.get("src") if img_tag else None
 
         if title and href not in [r["url"] for r in resultados]:
-            resultados.append({"title": title, "url": href, "price": price})
+            resultados.append({"title": title, "url": href, "price": price, "imagem": imagem})
             if len(resultados) >= max_results:
                 break
 
@@ -111,12 +114,14 @@ def buscar_resultados_shopee(query, max_results=5):
         title = item.get_text(strip=True)
         price_tag = item.select_one("span._1w9jLIQ") or item.select_one("span._341bFJ7")
         price = extrair_preco_texto(price_tag.text if price_tag else None)
+        img_tag = item.select_one("img")
+        imagem = img_tag.get("src") if img_tag else None
 
         if href.startswith("/"):
             href = "https://shopee.com.br" + href
 
         if title and href not in [r["url"] for r in resultados]:
-            resultados.append({"title": title, "url": href, "price": price})
+            resultados.append({"title": title, "url": href, "price": price, "imagem": imagem})
             if len(resultados) >= max_results:
                 break
 
@@ -151,7 +156,7 @@ def validar_original_por_nome(nome, titulo):
         return None
 
     comuns = nome_tokens.intersection(titulo_tokens)
-    ratio = len(comuns) / max(len(nome_tokens), len(titulo_tokens))
+    ratio = len(comuns) / min(len(nome_tokens), len(titulo_tokens))
     if ratio >= 0.6:
         return True
     if ratio <= 0.3:
@@ -175,18 +180,26 @@ def pegar_preco(url):
     html = pegar_html(url)
 
     if not html:
-        return None
-    
+        logger.info("Scraping tradicional falhou, tentando Playwright para %s", url)
+        return pegar_preco_playwright(url)
+
     soup = BeautifulSoup(html, "html.parser")
     site = identificar_site(url)
 
     if site == "mercado_livre":
-        return preco_mercado_livre(soup)
+        preco = preco_mercado_livre(soup)
     
     elif site == "amazon":
-        return preco_amazon(soup)
+        preco = preco_amazon(soup)
     
     elif site == "shopee":
-        return preco_shopee(soup)
+        preco = preco_shopee(soup)
     
-    return None
+    else:
+        return None
+
+    if preco is None:
+        logger.info("Preco nao encontrado no scraping tradicional, tentando Playwright para %s", url)
+        return pegar_preco_playwright(url)
+
+    return preco

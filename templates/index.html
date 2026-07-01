@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Preços</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'nb-blue': '#1e40af',
+                        'nb-green': '#10b981',
+                        'nb-gray': '#f3f4f6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    </style>
+</head>
+<body class="bg-white min-h-screen">
+    <header class="border-b border-gray-200">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold text-gray-800">Monitor<span class="text-nb-green">Preços</span></a>
+            <nav class="flex gap-6 text-sm">
+                <a href="/" class="text-gray-600 hover:text-nb-green">Início</a>
+                <a href="/adicionar" class="text-gray-600 hover:text-nb-green">Adicionar</a>
+                <a href="/verificar" class="text-gray-600 hover:text-nb-green">Verificar</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">Seus produtos monitorados</h2>
+
+        {% if produtos %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {% for p in produtos %}
+            <article class="group cursor-pointer">
+                <a href="{{ p.url }}" target="_blank" class="block">
+                    <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-2 flex items-center justify-center">
+                        {% if p.imagem %}
+                        <img src="{{ p.imagem }}" alt="{{ p.nome }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform">
+                        {% else %}
+                        <div class="text-6xl text-gray-300">📦</div>
+                        {% endif %}
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-800 line-clamp-2 mb-1" title="{{ p.nome }}">{{ p.nome }}</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs px-2 py-0.5 rounded {{ 'bg-green-100 text-green-700' if p.original else 'bg-gray-200 text-gray-600' }}">
+                            {{ 'Original' if p.original else 'Genérico' }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Meta: R$ {{ p.preco_desejado }}</p>
+                </a>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-16">
+            <p class="text-gray-500 mb-4">Nenhum produto cadastrado</p>
+            <a href="/adicionar" class="inline-block bg-nb-green text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-600">Adicionar produto</a>
+        </div>
+        {% endif %}
+    </main>
+</body>
+</html>
